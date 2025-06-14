@@ -2,6 +2,7 @@
 name = "typst-mcp"
 version = "0.1.0"
 description = "Typst MCP Server"
+authors = [{ name = "FUJISHIGE TEMMA", email = "tenma.x0@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

@@ -2,27 +2,17 @@
 
 A Model Context Protocol (MCP) server that provides Typst documentation to Claude Code and other MCP clients.
 
-## Installation
-
-### Prerequisites
+## Prerequisites
 
 - Python 3.12 or higher
 - [uv](https://docs.astral.sh/uv/) package manager
 
-### Install as a package
-
-```bash
-uv add --dev typst-mcp
-```
-
 ## Quickstart
-
-### 1. Add to Claude Code configuration
 
 Run the following command to add the Typst MCP server to your project-scope Claude Code configuration:
 
 ```bash
-claude mcp add typst -s project uvx  
+claude mcp add typst-mcp -s project -- uv run --with "git+https://github.com/FujishigeTemma/typst-mcp" typst-mcp serve
 ```
 
 Or manually add it to your `.mcp.json` configuration file:
@@ -30,10 +20,18 @@ Or manually add it to your `.mcp.json` configuration file:
 ```json
 {
   "mcpServers": {
-    "typst": {
+    "typst-mcp": {
+      "type": "stdio",
       "command": "uv",
-      "args": ["run", "typst-mcp"],
-    }
+      "args": [
+        "run",
+        "--with",
+        "git+https://github.com/FujishigeTemma/typst-mcp"
+        "typst-mcp",
+        "serve"
+      ],
+      "env": {}
+    },
   }
 }
 ```
