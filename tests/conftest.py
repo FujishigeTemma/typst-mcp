@@ -40,7 +40,7 @@ def temp_docs_dir() -> Iterator[pathlib.Path]:
 def mock_server() -> TypstDocumentationServer:
     """Create a mock server instance for testing."""
     with patch("pathlib.Path.exists", return_value=True):
-        server = TypstDocumentationServer()
+        server = TypstDocumentationServer(pathlib.Path("/mock/docs"))
         return server
 
 

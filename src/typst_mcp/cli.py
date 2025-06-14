@@ -5,11 +5,10 @@ import pathlib
 import anyio
 import click
 import uvicorn
-from mcp.server.sse import SseServerTransport
+from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from mcp.server.stdio import stdio_server
 from starlette.applications import Starlette
-from starlette.responses import Response
-from starlette.routing import Mount, Route
+from starlette.routing import Mount
 
 from .server import TypstDocumentationServer
 
@@ -33,17 +32,17 @@ def cli() -> None:
 
 
 @cli.command()
-@click.argument("transport", type=click.Choice(["stdio", "sse"]), default="stdio")
+@click.argument("transport", type=click.Choice(["stdio", "http"]), default="stdio")
 @click.option(
     "--port",
     type=int,
     default=8000,
-    help="Port to bind the SSE server to (default: 8000, only used with 'sse' transport)",
+    help="Port to bind the HTTP server to (default: 8000, only used with 'http' transport)",
 )
 @click.option(
     "--host",
     default="127.0.0.1",
-    help="Host to bind the SSE server to (default: 127.0.0.1, only used with 'sse' transport)",
+    help="Host to bind the HTTP server to (default: 127.0.0.1, only used with 'http' transport)",
 )
 @click.option(
     "--docs-path",
@@ -66,10 +65,10 @@ def serve(
 ) -> None:
     """Start the MCP server with specified transport.
 
-    TRANSPORT: Choose between 'stdio' (default, MCP standard) or 'sse' (HTTP Server-Sent Events)
+    TRANSPORT: Choose between 'stdio' (default, MCP standard) or 'http' (Streamable HTTP)
 
     - stdio: Standard MCP communication via stdin/stdout
-    - sse: HTTP server with Server-Sent Events for web-based clients
+    - http: HTTP server with Streamable HTTP for web-based clients
     """
     if debug:
         click.echo("Debug mode enabled")
@@ -87,30 +86,25 @@ def serve(
     click.echo("  • typst_browse - Browse directory structure")
     click.echo("  • typst_read - Read specific documentation files")
 
-    if transport == "sse":
-        click.echo(f"\nStarting SSE server on http://{host}:{port}")
+    if transport == "http":
+        click.echo(f"\nStarting HTTP server on http://{host}:{port}")
         click.echo("Available endpoints:")
-        click.echo(f"  • GET  http://{host}:{port}/sse - SSE connection endpoint")
-        click.echo(f"  • POST http://{host}:{port}/messages/ - Message endpoint")
+        click.echo(f"  • HTTP  http://{host}:{port}/mcp - MCP over HTTP endpoint")
 
-        sse_transport = SseServerTransport("/messages/")
+        session_manager = StreamableHTTPSessionManager(
+            app=server_instance.server,
+            event_store=None,
+            json_response=True,
+            stateless=True,
+        )
 
-        async def handle_sse(request) -> Response:
-            async with sse_transport.connect_sse(
-                request.scope, request.receive, request._send
-            ) as streams:
-                await server_instance.server.run(
-                    streams[0],
-                    streams[1],
-                    server_instance.server.create_initialization_options(),
-                )
-            return Response()
+        async def handle_streamable_http(scope, receive, send):
+            await session_manager.handle_request(scope, receive, send)
 
         starlette_app = Starlette(
             debug=debug,
             routes=[
-                Route("/sse", endpoint=handle_sse, methods=["GET"]),
-                Mount("/messages/", app=sse_transport.handle_post_message),
+                Mount("/mcp", app=handle_streamable_http),
             ],
         )
 

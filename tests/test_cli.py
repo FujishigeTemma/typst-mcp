@@ -147,7 +147,9 @@ class TestCLI:
 
         mock_server._handle_browse = AsyncMock(side_effect=mock_browse)
 
-        result = runner.invoke(cli, ["tools", "typst_browse", "--depth", "2", "--dir", "reference"])
+        result = runner.invoke(
+            cli, ["tools", "typst_browse", "--depth", "2", "--dir", "reference"]
+        )
         assert result.exit_code == 0
         mock_server._handle_browse.assert_called_once_with(2, "reference")
 
@@ -165,7 +167,9 @@ class TestCLI:
 
         mock_server._handle_read = AsyncMock(side_effect=mock_read)
 
-        result = runner.invoke(cli, ["tools", "typst_read", "reference/library/foundations/calc.md"])
+        result = runner.invoke(
+            cli, ["tools", "typst_read", "reference/library/foundations/calc.md"]
+        )
         assert result.exit_code == 0
         assert "📄 **calc.md**" in result.output
         assert "# Calc Functions" in result.output
@@ -241,7 +245,9 @@ class TestCLI:
         mock_anyio_run.assert_called_once()
 
     @patch("anyio.run")
-    def test_serve_command_with_debug(self, mock_anyio_run: Mock, runner: CliRunner) -> None:
+    def test_serve_command_with_debug(
+        self, mock_anyio_run: Mock, runner: CliRunner
+    ) -> None:
         """Test the serve command with debug flag."""
         result = runner.invoke(cli, ["serve", "--debug"])
         assert result.exit_code == 0
